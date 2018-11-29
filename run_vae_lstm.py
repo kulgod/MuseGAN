@@ -9,6 +9,7 @@ from pprint import pprint
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader, sampler
 from train import train, evaluate
+import utils as ut
 
 class WAV_Dataset(Dataset):
 	def __init__(self, csv_file, wav_files, wav_map):
@@ -24,39 +25,11 @@ class WAV_Dataset(Dataset):
 		sample = {'wav': wav, 'label': label}
 		return sample
 
-def prepare_writer(model_name, overwrite_existing=False):
-	log_dir = os.path.join('logs', model_name)
-	save_dir = os.path.join('checkpoints', model_name)
-	if overwrite_existing:
-	    delete_existing(log_dir)
-	    delete_existing(save_dir)
-	# Sadly, I've been told *not* to use tensorflow :<
-	# writer = tf.summary.FileWriter(log_dir)
-	writer = None
-	return writer
 
 def delete_existing(path):
   if os.path.exists(path):
       print("Deleting existing path: {}".format(path))
       shutil.rmtree(path)
-
-def load_model_by_name(model, global_step):
-    """
-    Load a model based on its name model.name and the checkpoint iteration step
-
-    Args:
-        model: Model: (): A model
-        global_step: int: (): Checkpoint iteration
-    """
-    file_path = os.path.join('checkpoints',
-                             model.name,
-                             'model-{:05d}.pt'.format(global_step))
-    state = torch.load(file_path)
-    model.load_state_dict(state)
-    print("Loaded from {}".format(file_path))
-
-
-
 
 
 if __name__ == '__main__':
@@ -92,10 +65,9 @@ if __name__ == '__main__':
 	vae_lstm = VAE_LSTM(z_dim=args.z, name=model_name).to(device) #need model function
 
 	if args.train:
-	    writer = prepare_writer(model_name, overwrite_existing=True)
-	    train(model=vae,
+	    writer = ut.prepare_writer(model_name, overwrite_existing=True)
+	    train(model=vae_lstm,
 	          train_loader=train_loader,
-	          labeled_subset=labeled_subset,
 	          device=device,
 	          tqdm=tqdm.tqdm,
 	          writer=writer,
@@ -104,7 +76,8 @@ if __name__ == '__main__':
 	    ut.evaluate_lower_bound(vae, labeled_subset, run_iwae=args.train == 2)
 
 	else:
-	    ut.load_model_by_name(vae, global_step=args.iter_max)
+	    ut.load_model_by_name(vae_lstm, global_step=args.iter_max)
+	    evaluate(model=vae_lstm, val_loader=val_loader, device=device)
 	    ut.evaluate_lower_bound(vae, labeled_subset, run_iwae=True)
 	    # sample = vae.sample_x(200).view(200, 28, 28).unsqueeze(1)
 	    # utils.save_image(sample, 'vae_sample.png')
