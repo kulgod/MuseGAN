@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 import tqdm
 import os
+import pickle
 from pprint import pprint
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -16,11 +17,25 @@ class WAV_Dataset(Dataset):
 
 	def __getitem__(self, idx):
 		wav = self.wav_files[idx]
-		label = self.label.iloc[idx, [1:]].as_matrix()
+		label = self.label.iloc[idx, 1:].as_matrix()
 		sample = {'wav': wav, 'label': label}
 		return sample
 
 
+y_map = {}
+labels = pd.read_csv('data/annotations/labels.csv').as_matrix()
+for i in range(labels.shape[0]):
+	y_map[labels[i]] = i
+
+wav_data, id_map = pickle.load(open("wav_data_1000.pkl", "rb"))
+X = np.zeros((0, wav_data.shape[0], wav_data.shape[1]))
+Y = np.zeros((0, 2))
+
+for i, id in enumerate(id_map):
+	if id in y_map:
+		np.stack(X, wav_data[None, i])
+		np.stack(Y, labels[None, y_map[id]])
+	
 
 wav_dataset = WAV_Dataset(csv_file='data/annotations/labels.csv', wav_files=wav_files, wav_map=wav_map)
 dataloader = DataLoader(wav_dataset, batch_size=args.batch_size, shuffle=True)
