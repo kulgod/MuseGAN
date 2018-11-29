@@ -35,5 +35,3 @@ class MuseVAE(nn.Module):
 
     def loss(self, x, xl, yl):
         pass
-
-    
