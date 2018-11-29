@@ -36,14 +36,15 @@ class MuseVAE(nn.Module):
         self.z_prior_v = torch.nn.Parameter(torch.ones(1), requires_grad=False)
         self.z_prior = (self.z_prior_m, self.z_prior_v)
 
-    def nelbo_bound(self, x):
-
-        m, v = self.enc.encode(x)
+    def nelbo_bound(self, x, y):
+        m, v = self.enc.encode(x, y)
         kl_z = kl_normal(m, v, self.z_prior_m, self.z_prior_v)
 
         z_samp = sample_gaussian(m, v)
         logits = self.dec.decode(z_samp, y)
-        rec = ut.log_bernoulli_with_logits(x, logits)
+        rec = nn.MSELoss()(x, logits)
+
+        nelbo = rec + kl_z
 
     def classification_loss(self, x, y):
         loss = nn.MSELoss()
@@ -51,7 +52,7 @@ class MuseVAE(nn.Module):
         return loss(output, y)
 
     def loss(self, xl, yl):
-        nelbo, kl_z, kl_y, rec = self.negative_elbo_bound(x)
+        nelbo, kl_z, kl_y, rec = self.nelbo_bound(xl, yl)
         cl_loss = self.classification_loss(xl, yl)
         loss = self.gen_weight*nelbo + self.class_weight*cl_loss
         summaries = dict((
