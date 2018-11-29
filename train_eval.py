@@ -7,6 +7,16 @@ from codebase import utils as ut
 from torch import nn, optim
 from torch.nn import functional as F
 from torchvision.utils import save_image
+import utils as ut
+
+def save_model_by_name(model, global_step):
+    save_dir = os.path.join('checkpoints', model.name)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    file_path = os.path.join(save_dir, 'model-{:05d}.pt'.format(global_step))
+    state = model.state_dict()
+    torch.save(state, file_path)
+    print('Saved to {}'.format(file_path))
 
 def train(model, train_loader, device, tqdm, writer,
           iter_max=np.inf, iter_save=np.inf,
@@ -24,7 +34,7 @@ def train(model, train_loader, device, tqdm, writer,
 
                 xu = torch.bernoulli(xu.to(device).reshape(xu.size(0), -1))
                 yu = yu.new(yu).to(device).float()
-                loss, summaries = model.loss(xu)
+                loss, summaries = model.loss(xu, yu)
 
                 loss.backward()
                 optimizer.step()
@@ -44,5 +54,20 @@ def train(model, train_loader, device, tqdm, writer,
 
                 if i == iter_max:
                     return
-def evaluate(model, val_loader, device):
-    pass
+
+def evaluate(model, val_loader, device, batch_size tdqm):
+    with tdqm(total=len(val_loader.dataset)/batch_size) as pbar:
+        for batch_idx, (xu, yu) in enumerate(val_loader):
+            xu = torch.bernoulli(xu.to(device).reshape(xu.size(0), -1))
+            yu = yu.new(yu).to(device).float()
+            loss, summaries = model.loss(xu, yu)
+
+            pbar.set_postfix(
+                    loss='{:.2e}'.format(loss))
+            pbar.update(1)
+
+
+
+
+
+
