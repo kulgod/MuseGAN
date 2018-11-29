@@ -48,6 +48,7 @@ class Decoder(nn.Module):
         h = self.net_1(zy)
         h = h.view(self.seq_length, self.batch_size, self.z_dim)
         x, x_n = self.net_2(h)
+        x = x.view(self.batch_size, self.x_dim*self.seq_length)
         return x
 
 class Classifier(nn.Module):
