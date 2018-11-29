@@ -3,9 +3,18 @@ import numpy as np
 import torch
 import torch.utils.data
 import nn
-from codebase import utils as ut
 from torch import nn, optim
 from torch.nn import functional as F
+
+def kl_normal(qm, qv, pm, pv):
+    element_wise = 0.5 * (torch.log(pv) - torch.log(qv) + qv / pv + (qm - pm).pow(2) / pv - 1)
+    kl = element_wise.sum(-1)
+    return kl
+
+def sample_gaussian(m, v):
+    epsilon = torch.randn_like(v)
+    var = torch.mul(epsilon, torch.sqrt(v))
+    return m + var
 
 class MuseVAE(nn.Module):
     def __init__(self, x_dim, y_dim, z_dim, batch_size, seq_length=1, gen_weight=1, class_weight=100):
@@ -28,12 +37,30 @@ class MuseVAE(nn.Module):
         self.z_prior = (self.z_prior_m, self.z_prior_v)
 
     def nelbo_bound(self, x):
-        pass
 
-    def classification_cross_entropy(self, x, y):
-        pass
+        m, v = self.enc.encode(x)
+        kl_z = kl_normal(m, v, self.z_prior_m, self.z_prior_v)
 
-    def loss(self, x, xl, yl):
-        pass
+        z_samp = sample_gaussian(m, v)
+        logits = self.dec.decode(z_samp, y)
+        rec = ut.log_bernoulli_with_logits(x, logits)
 
-    
+    def classification_loss(self, x, y):
+        loss = nn.MSELoss()
+        output = self.cls.classify(x)
+        return loss(output, y)
+
+    def loss(self, xl, yl):
+        nelbo, kl_z, kl_y, rec = self.negative_elbo_bound(x)
+        cl_loss = self.classification_loss(xl, yl)
+        loss = self.gen_weight*nelbo + self.class_weight*cl_loss
+        summaries = dict((
+            ('train/loss', loss),
+            ('class/ce', ce),
+            ('gen/elbo', -nelbo),
+            ('gen/kl_z', kl_z),
+            ('gen/kl_y', kl_y),
+            ('gen/rec', rec),
+        ))
+
+        return loss, summaries

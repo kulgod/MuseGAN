@@ -4,7 +4,6 @@ from torch import autograd, nn, optim
 from torch.nn import functional as F
 import torch
 
-
 class Encoder(nn.Module):
     def __init__(self, x_dim, y_dim, z_dim, batch_size, seq_length=1):
         super().__init__()
@@ -49,6 +48,7 @@ class Decoder(nn.Module):
         h = self.net_1(zy)
         h = h.view(self.seq_length, self.batch_size, self.z_dim)
         x, x_n = self.net_2(h)
+        x = x.view(self.batch_size, self.x_dim*self.seq_length)
         return x
 
 class Classifier(nn.Module):
