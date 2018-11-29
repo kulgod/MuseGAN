@@ -46,21 +46,21 @@ class MuseVAE(nn.Module):
 
         nelbo = rec + kl_z
 
+        return nelbo, kl_z, rec
     def classification_loss(self, x, y):
         loss = nn.MSELoss()
         output = self.cls.classify(x)
         return loss(output, y)
 
     def loss(self, xl, yl):
-        nelbo, kl_z, kl_y, rec = self.nelbo_bound(xl, yl)
+        nelbo, kl_z, rec = self.nelbo_bound(xl, yl)
         cl_loss = self.classification_loss(xl, yl)
         loss = self.gen_weight*nelbo + self.class_weight*cl_loss
         summaries = dict((
             ('train/loss', loss),
-            ('class/ce', ce),
+            ('class/ce', cl_loss),
             ('gen/elbo', -nelbo),
             ('gen/kl_z', kl_z),
-            ('gen/kl_y', kl_y),
             ('gen/rec', rec),
         ))
 
