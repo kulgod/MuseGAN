@@ -21,7 +21,6 @@ class WAV_Dataset(Dataset):
 		sample = {'wav': wav, 'label': label}
 		return sample
 
-
 y_map = {}
 labels = pd.read_csv('data/annotations/labels.csv').as_matrix()
 for i in range(labels.shape[0]):
@@ -31,11 +30,10 @@ wav_data, id_map = pickle.load(open("wav_data_1000.pkl", "rb"))
 X = np.zeros((0, wav_data.shape[0], wav_data.shape[1]))
 Y = np.zeros((0, 2))
 
-for i, id in enumerate(id_map):
-	if id in y_map:
+for i, song_id in enumerate(id_map):
+	if song_id in y_map:
 		np.stack(X, wav_data[None, i])
-		np.stack(Y, labels[None, y_map[id]])
-	
+		np.stack(Y, labels[None, y_map[song_id]])
 
 wav_dataset = WAV_Dataset(csv_file='data/annotations/labels.csv', wav_files=wav_files, wav_map=wav_map)
 dataloader = DataLoader(wav_dataset, batch_size=args.batch_size, shuffle=True)
@@ -43,8 +41,8 @@ dataloader = DataLoader(wav_dataset, batch_size=args.batch_size, shuffle=True)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-	parser.add_argument('--z',         type=int, default=10,     help="Number of latent dimensions")
-	parser.add_argument('--batch_size', type=int, default=20, help="Batch Size")
+	parser.add_argument('--z',         type=int, default=10,    help="Number of latent dimensions")
+	parser.add_argument('--batch_size',type=int, default=20, 	help="Batch Size")
 	parser.add_argument('--iter_max',  type=int, default=20000, help="Number of training iterations")
 	parser.add_argument('--iter_save', type=int, default=10000, help="Save model every n iterations")
 	parser.add_argument('--run',       type=int, default=0,     help="Run ID. In case you want to run replicates")
