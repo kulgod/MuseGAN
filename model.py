@@ -4,7 +4,6 @@ from torch import autograd, nn, optim
 from torch.nn import functional as F
 import torch
 
-
 class Encoder(nn.Module):
     def __init__(self, x_dim, y_dim, z_dim, batch_size, seq_length=1):
         super().__init__()

@@ -26,12 +26,6 @@ wav_dataset = WAV_Dataset(csv_file='data/annotations/labels.csv', wav_files=wav_
 dataloader = DataLoader(wav_dataset, batch_size=args.batch_size, shuffle=True)
 
 
-
-
-
-
-
-
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('--z',         type=int, default=10,     help="Number of latent dimensions")
@@ -71,8 +65,3 @@ if __name__ == '__main__':
 	    ut.evaluate_lower_bound(vae, labeled_subset, run_iwae=True)
 	    # sample = vae.sample_x(200).view(200, 28, 28).unsqueeze(1)
 	    # utils.save_image(sample, 'vae_sample.png')
-
-
-
-
-
