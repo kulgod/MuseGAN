@@ -60,13 +60,14 @@ class Classifier(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(self.seq_length*self.x_dim, self.seq_length*self.x_dim),
             nn.ReLU(),
-            nn.Linear(self.seq_length*self.x_dim, self.y_dim*2)
+            nn.Linear(self.seq_length*self.x_dim, self.y_dim),
+            nn.Tanh()
         )
 
     def classify(self, x):
         x = x.view(batch_size, self.seq_length*self.x_dim)
         y = self.net(x)
-        m, h = torch.split(h, h.size(dim) // 2, dim=dim)
-        y_m = F.tanh(m)
-        y_v = F.softplus(h) + 1e-8
-        return y_m, y_v
+        # m, h = torch.split(h, h.size(-1) // 2, dim=-1)
+        # y_m = F.tanh(m)
+        # y_v = F.softplus(h) + 1e-8
+        return y
