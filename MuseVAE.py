@@ -30,10 +30,22 @@ class MuseVAE(nn.Module):
     def nelbo_bound(self, x):
         pass
 
-    def classification_cross_entropy(self, x, y):
-        pass
+    def classification_loss(self, x, y):
+        loss = nn.MSELoss()
+        output = self.cls.classify(x)
+        return loss(output, y)
 
-    def loss(self, x, xl, yl):
-        pass
+    def loss(self, xl, yl):
+        nelbo, kl_z, kl_y, rec = self.negative_elbo_bound(x)
+        cl_loss = self.classification_loss(xl, yl)
+        loss = self.gen_weight*nelbo + self.class_weight*cl_loss
+        summaries = dict((
+            ('train/loss', loss),
+            ('class/ce', ce),
+            ('gen/elbo', -nelbo),
+            ('gen/kl_z', kl_z),
+            ('gen/kl_y', kl_y),
+            ('gen/rec', rec),
+        ))
 
-    
+        return loss, summaries
