@@ -4,33 +4,27 @@ import pandas as pd
 import torch
 import tqdm
 import os
-import shututil
+import shutil
 from pprint import pprint
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader, sampler
-from train import train, evaluate
+from train_eval import train, evaluate
 import utils as ut
+import pickle
 
 class WAV_Dataset(Dataset):
-	def __init__(self, csv_file, wav_files, wav_map):
-		self.label = pd.read_csv(csv_file)
+	def __init__(self, wav_files, labels):
 		self.wav_files = wav_files
+		self.labels = labels
 
 	def __len__(self):
 		return len(self.wav_files)
 
 	def __getitem__(self, idx):
 		wav = self.wav_files[idx]
-		label = self.label.iloc[idx, [1:]].as_matrix()
+		label = self.labels[idx]
 		sample = {'wav': wav, 'label': label}
 		return sample
-
-
-def delete_existing(path):
-  if os.path.exists(path):
-      print("Deleting existing path: {}".format(path))
-      shutil.rmtree(path)
-
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -51,8 +45,22 @@ if __name__ == '__main__':
 	pprint(vars(args))
 	print('Model name:', model_name)
 
+	y_map = {}
+	labels = pd.read_csv('data/annotations/new_labels.csv').as_matrix()
+	for i in range(labels.shape[0]):
+		y_map[labels[i][0]] = i
+
+	wav_data, id_map = pickle.load(open("wav_data_1000.pkl", "rb"))
+	X = np.zeros((0, wav_data.shape[0], wav_data.shape[1]))
+	Y = np.zeros((0, 2))
+
+	for i, song_id in enumerate(id_map):
+		if song_id in y_map:
+			np.stack(X, wav_data[None, i])
+			np.stack(Y, labels[None, y_map[song_id]])
+
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-	wav_dataset = WAV_Dataset(csv_file='data/annotations/labels.csv', wav_files=wav_files, wav_map=wav_map)
+	wav_dataset = WAV_Dataset(wav_files=X, labels=Y)
 	dataset_size = len(wav.dataset)
 	indices = list(range(dataset_size))
 	split = int(np.floor(args.val_split * dataset_size))
