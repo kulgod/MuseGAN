@@ -26,13 +26,17 @@ def train(model, train_loader, device, tqdm, writer,
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     i = 0
     with tqdm(total=iter_max) as pbar:
-        while True:
-            for batch_idx, (xu, yu) in enumerate(train_loader):
+        for i in range(iter_max):
+            for batch_idx, elem in enumerate(train_loader):
+                print("batch: {}".format(batch_idx))
                 i += 1 # i is num of gradient steps taken by end of loop iteration
                 optimizer.zero_grad()
+                xu = elem['wav']
+                yu = elem['label']
+                xu = xu.new(xu).float().to(device)
+                yu = yu.new(yu).float().to(device)
                 print(xu)
-                xu = xu.new(xu).to(device)
-                yu = yu.new(yu).to(device)
+                print(yu)
                 loss, summaries = model.loss(xu, yu)
 
                 loss.backward()

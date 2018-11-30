@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import torch
 import torch.utils.data
-import nn
+import nns
 from torch import nn, optim
 from torch.nn import functional as F
 
@@ -26,7 +26,7 @@ class MuseVAE(nn.Module):
         self.seq_length = seq_length
         self.gen_weight = gen_weight
         self.class_weight = class_weight
-        nn = getattr(nn, 'model')
+        nn = getattr(nns, 'model')
         self.enc = nn.Encoder(self.x_dim, self.y_dim, self.z_dim, self.batch_size, self.seq_length)
         self.dec = nn.Encoder(self.x_dim, self.y_dim, self.z_dim, self.batch_size, self.seq_length)
         self.cls = nn.Classifier(self.x_dim, self.y_dim, self.batch_size, self.seq_length)

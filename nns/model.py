@@ -17,16 +17,16 @@ class Encoder(nn.Module):
 
     def encode(self, x, y):
         x = x.view(self.seq_length, self.batch_size, self.x_dim)
-        y = y.unsqueeze(0).repeat(seq_length, 1, 1)
+        y = y.unsqueeze(0).repeat(self.seq_length, 1, 1)
         xy = torch.cat((x, y), dim=-1)
         output, h_n = self.net_1(xy)
         output = output.contiguous().view(output.size(1), output.size(0)*output.size(2))
         z = self.net_2(output)
-        z = z.view(self.seq_length, self.batch_size. self.z_dim*2)
-        z_m = torch.tensor(self.seq_length, self.batch_size. self.z_dim)
-        z_v = torch.tensor(self.seq_length, self.batch_size. self.z_dim)
+        z = z.view(self.seq_length, self.batch_size, self.z_dim*2)
+        z_m = torch.tensor((self.seq_length, self.batch_size, self.z_dim))
+        z_v = torch.tensor((self.seq_length, self.batch_size, self.z_dim))
         for i in range(self.seq_length):
-            z_m[i], h = torch.split(z, z.size(-1) // 2, dim=-1)
+            z_m[i], h = torch.split(z[i], z[i].size(-1) // 2, dim=-1)
             z_v[i] = F.softplus(h) + 1e-8
         return z_m, z_v
 
@@ -43,7 +43,7 @@ class Decoder(nn.Module):
         self.net_2 = nn.GRU(self.z_dim, self.x_dim)
     def decode(self, z, y):
         z = z.view(self.batch_size, self.z_dim*self.seq_length)
-        y = y.unsqueeze(0).repeat(seq_length, 1, 1)
+        y = y.unsqueeze(0).repeat(self.seq_length, 1, 1)
         zy = torch.cat((z, y), dim=-1)
         h = self.net_1(zy)
         h = h.view(self.seq_length, self.batch_size, self.z_dim)

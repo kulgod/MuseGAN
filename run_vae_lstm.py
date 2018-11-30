@@ -58,8 +58,8 @@ if __name__ == '__main__':
 			X = np.concatenate([X, wav_data[None, i]])
 			Y = np.concatenate([Y, labels[y_map[song_id]][None, 1:]])
 
-	print(X.shape)
-	print(Y.shape)
+	print(X)
+	print(Y)
 
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	wav_dataset = WAV_Dataset(wav_files=X, labels=Y)
@@ -73,10 +73,11 @@ if __name__ == '__main__':
 
 	train_loader = DataLoader(wav_dataset, batch_size=args.batch_size, sampler=train_sampler)
 	val_loader = DataLoader(wav_dataset, batch_size=args.batch_size, sampler=val_sampler)
-	vae_lstm = MuseVAE.MuseVAE(x_dim=1000, y_dim=2, z_dim=args.z, batch_size=args.batch_size, seq_length=100).to(device) 
+	vae_lstm = MuseVAE.MuseVAE(x_dim=10, y_dim=2, z_dim=args.z, batch_size=args.batch_size, seq_length=100).to(device) 
 
 	if args.train:
 	    writer = ut.prepare_writer(model_name, overwrite_existing=True)
+	    print("bouta train baby")
 	    train(model=vae_lstm,
 	          train_loader=train_loader,
 	          device=device,
