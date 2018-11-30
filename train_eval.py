@@ -3,7 +3,6 @@ import numpy as np
 import os
 # import tensorflow as tf
 import torch
-from codebase import utils as ut
 from torch import nn, optim
 from torch.nn import functional as F
 from torchvision.utils import save_image
@@ -31,9 +30,9 @@ def train(model, train_loader, device, tqdm, writer,
             for batch_idx, (xu, yu) in enumerate(train_loader):
                 i += 1 # i is num of gradient steps taken by end of loop iteration
                 optimizer.zero_grad()
-
-                xu = torch.bernoulli(xu.to(device).reshape(xu.size(0), -1))
-                yu = yu.new(yu).to(device).float()
+                print(xu)
+                xu = xu.new(xu).to(device)
+                yu = yu.new(yu).to(device)
                 loss, summaries = model.loss(xu, yu)
 
                 loss.backward()
@@ -55,7 +54,7 @@ def train(model, train_loader, device, tqdm, writer,
                 if i == iter_max:
                     return
 
-def evaluate(model, val_loader, device, batch_size tdqm):
+def evaluate(model, val_loader, device, batch_size, tdqm):
     with tdqm(total=len(val_loader.dataset)/batch_size) as pbar:
         for batch_idx, (xu, yu) in enumerate(val_loader):
             xu = torch.bernoulli(xu.to(device).reshape(xu.size(0), -1))
@@ -65,6 +64,8 @@ def evaluate(model, val_loader, device, batch_size tdqm):
             pbar.set_postfix(
                     loss='{:.2e}'.format(loss))
             pbar.update(1)
+
+            print(loss)
 
 
 

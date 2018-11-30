@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, DataLoader, sampler
 from train_eval import train, evaluate
 import utils as ut
 import pickle
-
+import MuseVAE
 class WAV_Dataset(Dataset):
 	def __init__(self, wav_files, labels):
 		self.wav_files = wav_files
@@ -51,26 +51,29 @@ if __name__ == '__main__':
 		y_map[labels[i][0]] = i
 
 	wav_data, id_map = pickle.load(open("wav_data_1000.pkl", "rb"))
-	X = np.zeros((0, wav_data.shape[0], wav_data.shape[1]))
+	X = np.zeros((0, wav_data.shape[1]))
 	Y = np.zeros((0, 2))
-
 	for i, song_id in enumerate(id_map):
 		if song_id in y_map:
-			np.stack(X, wav_data[None, i])
-			np.stack(Y, labels[None, y_map[song_id]])
+			X = np.concatenate([X, wav_data[None, i]])
+			Y = np.concatenate([Y, labels[y_map[song_id]][None, 1:]])
+
+	print(X.shape)
+	print(Y.shape)
 
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	wav_dataset = WAV_Dataset(wav_files=X, labels=Y)
-	dataset_size = len(wav.dataset)
+	dataset_size = len(wav_dataset)
+	print(len(wav_dataset))
 	indices = list(range(dataset_size))
 	split = int(np.floor(args.val_split * dataset_size))
-	train_idxs, val_indxs = indices[split:], indices[:split]
-	train_sampler = sampler.SubsetRandomSampler(train_indices)
-	val_sampler = sampler.SubsetRandomSampler(val_indices)
+	train_idxs, val_idxs = indices[split:], indices[:split]
+	train_sampler = sampler.SubsetRandomSampler(train_idxs)
+	val_sampler = sampler.SubsetRandomSampler(val_idxs)
 
 	train_loader = DataLoader(wav_dataset, batch_size=args.batch_size, sampler=train_sampler)
 	val_loader = DataLoader(wav_dataset, batch_size=args.batch_size, sampler=val_sampler)
-	vae_lstm = VAE_LSTM(z_dim=args.z, name=model_name).to(device) #need model function
+	vae_lstm = MuseVAE.MuseVAE(x_dim=1000, y_dim=2, z_dim=args.z, batch_size=args.batch_size, seq_length=100).to(device) 
 
 	if args.train:
 	    writer = ut.prepare_writer(model_name, overwrite_existing=True)
