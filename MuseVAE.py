@@ -28,7 +28,7 @@ class MuseVAE(nn.Module):
         self.class_weight = class_weight
         nn = getattr(nns, 'model')
         self.enc = nn.Encoder(self.x_dim, self.y_dim, self.z_dim, self.batch_size, self.seq_length)
-        self.dec = nn.Encoder(self.x_dim, self.y_dim, self.z_dim, self.batch_size, self.seq_length)
+        self.dec = nn.Decoder(self.x_dim, self.y_dim, self.z_dim, self.batch_size, self.seq_length)
         self.cls = nn.Classifier(self.x_dim, self.y_dim, self.batch_size, self.seq_length)
 
         # Set prior as fixed parameter attached to Module

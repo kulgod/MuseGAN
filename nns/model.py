@@ -23,12 +23,14 @@ class Encoder(nn.Module):
         output = output.contiguous().view(output.size(1), output.size(0)*output.size(2))
         z = self.net_2(output)
         z = z.view(self.seq_length, self.batch_size, self.z_dim*2)
-        z_m = torch.tensor((self.seq_length, self.batch_size, self.z_dim))
-        z_v = torch.tensor((self.seq_length, self.batch_size, self.z_dim))
+        z_m = torch.randn(self.seq_length, self.batch_size, self.z_dim)
+        z_v = torch.randn(self.seq_length, self.batch_size, self.z_dim)
         for i in range(self.seq_length):
-            z_m[i], h = torch.split(z[i], z[i].size(-1) // 2, dim=-1)
-            z_v[i] = F.softplus(h) + 1e-8
-        return z_m, z_v
+            m, h = torch.chunk(z[i], 2, dim=-1)
+            v = F.softplus(h) + 1e-8
+            z_m[i] = m
+            z_v[i] = v
+        return z_m.view(self.batch_size, self.seq_length*self.z_dim), z_v.view(self.batch_size, self.seq_length*self.z_dim)
 
 
 class Decoder(nn.Module):
@@ -43,7 +45,8 @@ class Decoder(nn.Module):
         self.net_2 = nn.GRU(self.z_dim, self.x_dim)
     def decode(self, z, y):
         z = z.view(self.batch_size, self.z_dim*self.seq_length)
-        y = y.unsqueeze(0).repeat(self.seq_length, 1, 1)
+        # y = y.repeat(self.seq_length, 1, 1)
+
         zy = torch.cat((z, y), dim=-1)
         h = self.net_1(zy)
         h = h.view(self.seq_length, self.batch_size, self.z_dim)
@@ -66,7 +69,7 @@ class Classifier(nn.Module):
         )
 
     def classify(self, x):
-        x = x.view(batch_size, self.seq_length*self.x_dim)
+        x = x.view(self.batch_size, self.seq_length*self.x_dim)
         y = self.net(x)
         # m, h = torch.split(h, h.size(-1) // 2, dim=-1)
         # y_m = F.tanh(m)
