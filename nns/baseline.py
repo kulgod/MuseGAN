@@ -13,7 +13,6 @@ class Encoder(nn.Module):
         self.batch_size = batch_size
         self.seq_length = seq_length
         self.net_1 = nn.GRU(self.x_dim+self.y_dim, self.z_dim)
-        self.net_2 = nn.Linear(self.seq_length*self.z_dim, self.seq_length*self.z_dim)
 
     def encode(self, x, y):
         x = x.view(self.seq_length, self.batch_size, self.x_dim)
@@ -21,8 +20,7 @@ class Encoder(nn.Module):
         xy = torch.cat((x, y), dim=-1)
         output, h_n = self.net_1(xy)
         output = output.contiguous().view(output.size(1), output.size(0)*output.size(2))
-        z = self.net_2(output)
-        return z.view(self.batch_size, self.seq_length*self.z_dim))
+        return output
 
 
 class Decoder(nn.Module):
@@ -33,14 +31,11 @@ class Decoder(nn.Module):
         self.z_dim = z_dim
         self.batch_size = batch_size
         self.seq_length = seq_length
-        self.net_1 = nn.Linear(self.seq_length*self.z_dim+self.y_dim, self.seq_length*self.z_dim)
-        self.net_2 = nn.GRU(self.z_dim, self.x_dim)
+        self.net_2 = nn.GRU(self.z_dim+self.y_dim, self.x_dim)
     def decode(self, z, y):
         z = z.view(self.batch_size, self.z_dim*self.seq_length)
         # y = y.repeat(self.seq_length, 1, 1)
-
         zy = torch.cat((z, y), dim=-1)
-        h = self.net_1(zy)
         h = h.view(self.seq_length, self.batch_size, self.z_dim)
         x, x_n = self.net_2(h)
         x = x.view(self.batch_size, self.x_dim*self.seq_length)
