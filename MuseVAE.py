@@ -17,7 +17,7 @@ def sample_gaussian(m, v):
     return m + var
 
 class MuseVAE(nn.Module):
-    def __init__(self, x_dim, y_dim, z_dim, batch_size, seq_length=1, gen_weight=1, class_weight=100):
+    def __init__(self, x_dim, y_dim, z_dim, batch_size, seq_length=1, gen_weight=1, class_weight=1000):
         super().__init__()
         self.x_dim = x_dim
         self.y_dim = y_dim
@@ -48,14 +48,14 @@ class MuseVAE(nn.Module):
 
         return nelbo, kl_z, rec
     def classification_loss(self, x, y):
-        loss = nn.MSELoss()
+        loss =  nn.MSELoss()
         output = self.cls.classify(x)
         return loss(output, y)
 
     def loss(self, xl, yl):
         nelbo, kl_z, rec = self.nelbo_bound(xl, yl)
         cl_loss = self.classification_loss(xl, yl)
-        loss = self.gen_weight*nelbo + self.class_weight*cl_loss
+        loss = self.class_weight*cl_loss + self.gen_weight*nelbo 
         summaries = dict((
             ('train/loss', loss),
             ('class/ce', cl_loss),
@@ -64,4 +64,4 @@ class MuseVAE(nn.Module):
             ('gen/rec', rec),
         ))
 
-        return loss, summaries
+        return loss.mean(), kl_z.mean(), rec.mean(), summaries
